@@ -1,0 +1,21 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.remote.pro'
+    compileSdk 33
+    defaultConfig {
+        applicationId "com.remote.pro"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+    }
+    packaging { resources { excludes += '/META-INF/{AL2.0,LGPL2.1}' } }
+}
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("CheckAarMetadata")) { task.enabled = false }
+}
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+}
