@@ -29,7 +29,6 @@ public class RemoteService extends AccessibilityService {
                         if (cmd.startsWith("CLICK:")) {
                             String[] p = cmd.split(":");
                             DisplayMetrics m = getResources().getDisplayMetrics();
-                            // Exact mapping chahe screen seedhi ho ya terhi
                             performClick(Float.parseFloat(p[1]) * m.widthPixels, Float.parseFloat(p[2]) * m.heightPixels);
                         } else if (cmd.startsWith("SWIPE:")) {
                             performSwipe(cmd.split(":")[1]);
@@ -48,7 +47,12 @@ public class RemoteService extends AccessibilityService {
     }
 
     private void performClick(float x, float y) {
-        Path p = new Path(); p.moveTo(x, y);
+        // Clamp to prevent out-of-bounds clicks
+        DisplayMetrics m = getResources().getDisplayMetrics();
+        float safeX = Math.max(0, Math.min(x, m.widthPixels - 1));
+        float safeY = Math.max(0, Math.min(y, m.heightPixels - 1));
+        
+        Path p = new Path(); p.moveTo(safeX, safeY);
         GestureDescription.Builder b = new GestureDescription.Builder();
         b.addStroke(new GestureDescription.StrokeDescription(p, 0, 50));
         dispatchGesture(b.build(), null, null);
@@ -58,23 +62,35 @@ public class RemoteService extends AccessibilityService {
         DisplayMetrics m = getResources().getDisplayMetrics();
         float cx = m.widthPixels / 2f, cy = m.heightPixels / 2f;
         Path p = new Path(); p.moveTo(cx, cy);
-        if (dir.equals("UP")) p.lineTo(cx, cy - 500);
-        else if (dir.equals("DOWN")) p.lineTo(cx, cy + 500);
-        else if (dir.equals("LEFT")) p.lineTo(cx - 400, cy);
-        else if (dir.equals("RIGHT")) p.lineTo(cx + 400, cy);
+        
+        // Android scroll logic (To scroll UP, finger must swipe DOWN)
+        if (dir.equals("UP")) p.lineTo(cx, cy + 500);
+        else if (dir.equals("DOWN")) p.lineTo(cx, cy - 500);
+        else if (dir.equals("LEFT")) p.lineTo(cx + 400, cy);
+        else if (dir.equals("RIGHT")) p.lineTo(cx - 400, cy);
         
         GestureDescription.Builder b = new GestureDescription.Builder();
-        b.addStroke(new GestureDescription.StrokeDescription(p, 0, 200));
+        b.addStroke(new GestureDescription.StrokeDescription(p, 0, 150));
         dispatchGesture(b.build(), null, null);
     }
 
-    private void inputText(String t) {
+    private void inputText(String newChar) {
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root != null) {
             AccessibilityNodeInfo focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
             if (focus != null) {
+                // Real-time Append Logic
+                CharSequence current = focus.getText();
+                String text = (current != null ? current.toString() : "");
+                
+                if (newChar.equals("BACKSPACE")) {
+                    if (text.length() > 0) text = text.substring(0, text.length() - 1);
+                } else {
+                    text = text + newChar;
+                }
+
                 Bundle a = new Bundle(); 
-                a.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, t);
+                a.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
                 focus.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, a);
             }
         }
