@@ -1,8 +1,16 @@
-plugins { id 'com.android.application' }
+plugins {
+    id 'com.android.application'
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
 
 android {
     namespace 'com.remote.pro'
     compileSdk 33
+
     defaultConfig {
         applicationId "com.remote.pro"
         minSdk 24
@@ -10,12 +18,25 @@ android {
         versionCode 1
         versionName "1.0"
     }
-    buildTypes { release { minifyEnabled false } }
-    packaging { resources { excludes += '/META-INF/{AL2.0,LGPL2.1}' } }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
 }
 
-tasks.whenTaskAdded { task -> 
-    if (task.name.contains("CheckAarMetadata")) { task.enabled = false } 
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("CheckAarMetadata")) {
+        task.enabled = false
+    }
 }
 
 dependencies {
