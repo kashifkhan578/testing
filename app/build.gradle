@@ -1,6 +1,4 @@
-plugins {
-    id 'com.android.application'
-}
+plugins { id 'com.android.application' }
 
 repositories {
     google()
@@ -10,7 +8,6 @@ repositories {
 android {
     namespace 'com.remote.pro'
     compileSdk 33
-
     defaultConfig {
         applicationId "com.remote.pro"
         minSdk 24
@@ -18,29 +15,14 @@ android {
         versionCode 1
         versionName "1.0"
     }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    packaging {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
-    }
+    packaging { resources { excludes += '/META-INF/{AL2.0,LGPL2.1}' } }
 }
 
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("CheckAarMetadata")) {
-        task.enabled = false
-    }
-}
+tasks.whenTaskAdded { task -> if (task.name.contains("CheckAarMetadata")) { task.enabled = false } }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    // QR Scanner Library
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
 }
