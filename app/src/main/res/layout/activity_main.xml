@@ -4,20 +4,23 @@
     android:gravity="center" android:orientation="vertical" android:padding="20dp" android:background="#121212">
 
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="All-in-One Remote" android:textSize="26sp" android:textColor="#FFFFFF" android:layout_marginBottom="10dp"/>
+        android:text="All-in-One Remote" android:textSize="30sp" android:textStyle="bold" android:textColor="#FFFFFF" android:layout_marginBottom="10dp"/>
 
     <TextView android:id="@+id/tv_ip" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="IP: Detecting..." android:textSize="16sp" android:textColor="#4CAF50" android:layout_marginBottom="30dp"/>
+        android:text="IP: Detecting..." android:textSize="18sp" android:textColor="#4CAF50" android:layout_marginBottom="40dp"/>
 
-    <Button android:id="@+id/btn_acc" android:layout_width="match_parent" android:layout_height="60dp"
-        android:text="1. Enable Touch (Accessibility)" android:layout_marginBottom="15dp" />
+    <Button android:id="@+id/btn_acc" android:layout_width="match_parent" android:layout_height="65dp"
+        android:text="1. Enable Touch (Accessibility)" android:layout_marginBottom="15dp" android:backgroundTint="#1976D2" />
 
-    <Button android:id="@+id/btn_stream" android:layout_width="match_parent" android:layout_height="60dp"
-        android:text="2. Start Screen Share" android:layout_marginBottom="15dp" />
+    <Button android:id="@+id/btn_stream" android:layout_width="match_parent" android:layout_height="65dp"
+        android:text="2. Start Screen Share" android:layout_marginBottom="15dp" android:backgroundTint="#388E3C"/>
 
-    <Button android:id="@+id/btn_scan" android:layout_width="match_parent" android:layout_height="60dp"
-        android:text="3. Scan PC QR Code" android:layout_marginBottom="25dp" android:backgroundTint="#FF9800"/>
+    <Button android:id="@+id/btn_scan" android:layout_width="match_parent" android:layout_height="65dp"
+        android:text="3. Scan PC QR Code" android:layout_marginBottom="25dp" android:backgroundTint="#F57C00"/>
+
+    <Button android:id="@+id/btn_stop" android:layout_width="match_parent" android:layout_height="50dp"
+        android:text="STOP &amp; DISCONNECT" android:layout_marginBottom="10dp" android:backgroundTint="#D32F2F" android:visibility="gone"/>
 
     <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Status: Not Connected" android:textColor="#FFB300" />
+        android:text="Status: Waiting for Setup..." android:textColor="#FFEB3B" android:textSize="16sp"/>
 </LinearLayout>
