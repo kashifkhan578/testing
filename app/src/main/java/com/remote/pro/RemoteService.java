@@ -47,7 +47,6 @@ public class RemoteService extends AccessibilityService {
     }
 
     private void performClick(float x, float y) {
-        // Clamp to prevent out-of-bounds clicks
         DisplayMetrics m = getResources().getDisplayMetrics();
         float safeX = Math.max(0, Math.min(x, m.widthPixels - 1));
         float safeY = Math.max(0, Math.min(y, m.heightPixels - 1));
@@ -61,13 +60,13 @@ public class RemoteService extends AccessibilityService {
     private void performSwipe(String dir) {
         DisplayMetrics m = getResources().getDisplayMetrics();
         float cx = m.widthPixels / 2f, cy = m.heightPixels / 2f;
-        Path p = new Path(); p.moveTo(cx, cy);
+        Path p = new Path(); 
         
-        // Android scroll logic (To scroll UP, finger must swipe DOWN)
-        if (dir.equals("UP")) p.lineTo(cx, cy + 500);
-        else if (dir.equals("DOWN")) p.lineTo(cx, cy - 500);
-        else if (dir.equals("LEFT")) p.lineTo(cx + 400, cy);
-        else if (dir.equals("RIGHT")) p.lineTo(cx - 400, cy);
+        // Exact 4-Way Scroll Math (Reverse finger movement for correct scroll)
+        if (dir.equals("UP")) { p.moveTo(cx, cy - 100); p.lineTo(cx, cy + 400); } // Scroll Up = Finger moves Down
+        else if (dir.equals("DOWN")) { p.moveTo(cx, cy + 300); p.lineTo(cx, cy - 300); } // Scroll Down = Finger moves Up
+        else if (dir.equals("LEFT")) { p.moveTo(cx - 200, cy); p.lineTo(cx + 300, cy); } // Scroll Left = Finger moves Right
+        else if (dir.equals("RIGHT")) { p.moveTo(cx + 300, cy); p.lineTo(cx - 300, cy); } // Scroll Right = Finger moves Left
         
         GestureDescription.Builder b = new GestureDescription.Builder();
         b.addStroke(new GestureDescription.StrokeDescription(p, 0, 150));
@@ -79,12 +78,14 @@ public class RemoteService extends AccessibilityService {
         if (root != null) {
             AccessibilityNodeInfo focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
             if (focus != null) {
-                // Real-time Append Logic
+                // Sahi Append Logic (Ab pehla word delete nahi hoga)
                 CharSequence current = focus.getText();
                 String text = (current != null ? current.toString() : "");
                 
                 if (newChar.equals("BACKSPACE")) {
                     if (text.length() > 0) text = text.substring(0, text.length() - 1);
+                } else if (newChar.equals("SPACE")) {
+                    text = text + " ";
                 } else {
                     text = text + newChar;
                 }
