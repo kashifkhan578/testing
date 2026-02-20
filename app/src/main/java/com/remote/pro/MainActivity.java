@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvStatus, tvIp;
     private MediaProjectionManager mpm;
     private String myMobileIp = "Not Found";
+    private Button btnStop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,16 +35,11 @@ public class MainActivity extends AppCompatActivity {
         Button btnAcc = findViewById(R.id.btn_acc);
         Button btnStream = findViewById(R.id.btn_stream);
         Button btnScan = findViewById(R.id.btn_scan);
+        btnStop = findViewById(R.id.btn_stop);
 
         mpm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-
-        // Naya Advanced IP Scanner (Hotspot aur Wi-Fi dono ke liye)
         myMobileIp = getLocalIpAddress();
-        if (myMobileIp != null) {
-            tvIp.setText("IP: " + myMobileIp);
-        } else {
-            tvIp.setText("IP: Error (Check Wi-Fi/Hotspot)");
-        }
+        tvIp.setText("IP: " + (myMobileIp != null ? myMobileIp : "Error"));
 
         btnAcc.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
 
@@ -52,15 +49,20 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnScan.setOnClickListener(v -> {
-            ScanOptions options = new ScanOptions();
-            options.setPrompt("Scan PC QR Code");
-            options.setBeepEnabled(true);
-            options.setOrientationLocked(false);
-            barcodeLauncher.launch(options);
+            ScanOptions opt = new ScanOptions();
+            opt.setPrompt("Scan PC QR Code");
+            opt.setOrientationLocked(false);
+            barcodeLauncher.launch(opt);
+        });
+
+        btnStop.setOnClickListener(v -> {
+            stopService(new Intent(this, ScreenStreamService.class));
+            tvStatus.setText("Disconnected.");
+            tvStatus.setTextColor(android.graphics.Color.RED);
+            btnStop.setVisibility(View.GONE);
         });
     }
 
-    // Ye function Hotspot aur Wi-Fi dono ka IP nikalne mein expert hai
     private String getLocalIpAddress() {
         try {
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
@@ -72,9 +74,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        } catch (Exception ex) {}
         return null;
     }
 
@@ -87,39 +87,29 @@ public class MainActivity extends AppCompatActivity {
                     serviceIntent.putExtra("DATA", result.getData());
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                         startForegroundService(serviceIntent);
-                    } else {
-                        startService(serviceIntent);
-                    }
-                    Toast.makeText(this, "Screen Share Ready!", Toast.LENGTH_SHORT).show();
+                    } else startService(serviceIntent);
+                    Toast.makeText(this, "Service Running in Background!", Toast.LENGTH_SHORT).show();
+                    btnStop.setVisibility(View.VISIBLE);
                 }
             }
     );
 
     private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(
         new ScanContract(), result -> {
-            if (result.getContents() != null) {
-                String data = result.getContents();
-                if (data.startsWith("REMOTE_PAIR:")) {
-                    String pcIp = data.split(":")[1];
-                    tvStatus.setText("Connecting to PC...");
-                    
-                    new Thread(() -> {
-                        try {
-                            Socket s = new Socket(pcIp, 8888);
-                            s.getOutputStream().write(("CONNECT:" + myMobileIp).getBytes());
-                            s.close();
-                            runOnUiThread(() -> {
-                                tvStatus.setText("Connected successfully!");
-                                tvStatus.setTextColor(android.graphics.Color.GREEN);
-                            });
-                        } catch (Exception e) {
-                            runOnUiThread(() -> {
-                                tvStatus.setText("Connection Failed! Is PC app running?");
-                                tvStatus.setTextColor(android.graphics.Color.RED);
-                            });
-                        }
-                    }).start();
-                }
+            if (result.getContents() != null && result.getContents().startsWith("REMOTE_PAIR:")) {
+                String pcIp = result.getContents().split(":")[1];
+                tvStatus.setText("Connecting...");
+                new Thread(() -> {
+                    try {
+                        Socket s = new Socket(pcIp, 8888);
+                        s.getOutputStream().write(("CONNECT:" + myMobileIp).getBytes());
+                        s.close();
+                        runOnUiThread(() -> {
+                            tvStatus.setText("Connected!");
+                            tvStatus.setTextColor(android.graphics.Color.GREEN);
+                        });
+                    } catch (Exception e) {}
+                }).start();
             }
         }
     );
