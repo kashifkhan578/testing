@@ -2,10 +2,8 @@ package com.remote.pro;
 
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.text.format.Formatter;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,12 +12,16 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
+import java.util.Enumeration;
 
 public class MainActivity extends AppCompatActivity {
     private TextView tvStatus, tvIp;
     private MediaProjectionManager mpm;
-    private String myMobileIp = "";
+    private String myMobileIp = "Not Found";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,11 +36,13 @@ public class MainActivity extends AppCompatActivity {
 
         mpm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
 
-        try {
-            WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            myMobileIp = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+        // Naya Advanced IP Scanner (Hotspot aur Wi-Fi dono ke liye)
+        myMobileIp = getLocalIpAddress();
+        if (myMobileIp != null) {
             tvIp.setText("IP: " + myMobileIp);
-        } catch (Exception e) {}
+        } else {
+            tvIp.setText("IP: Error (Check Wi-Fi/Hotspot)");
+        }
 
         btnAcc.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
 
@@ -56,6 +60,24 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Ye function Hotspot aur Wi-Fi dono ka IP nikalne mein expert hai
+    private String getLocalIpAddress() {
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+                        return inetAddress.getHostAddress();
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     private final ActivityResultLauncher<Intent> screenLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -68,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         startService(serviceIntent);
                     }
-                    Toast.makeText(this, "Screen Share Started!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Screen Share Ready!", Toast.LENGTH_SHORT).show();
                 }
             }
     );
@@ -81,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
                     String pcIp = data.split(":")[1];
                     tvStatus.setText("Connecting to PC...");
                     
-                    // Asal Connection Code: PC ko hamara IP batana
                     new Thread(() -> {
                         try {
                             Socket s = new Socket(pcIp, 8888);
