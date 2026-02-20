@@ -5,7 +5,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
-    <application android:label="Remote Control Suite" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+    <application 
+        android:label="All-in-One Remote" 
+        android:icon="@drawable/app_icon"
+        android:roundIcon="@drawable/app_icon"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
         
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
