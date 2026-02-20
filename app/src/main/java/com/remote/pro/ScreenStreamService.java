@@ -33,7 +33,7 @@ public class ScreenStreamService extends Service {
             NotificationChannel channel = new NotificationChannel("SC", "Screen Capture", NotificationManager.IMPORTANCE_LOW);
             getSystemService(NotificationManager.class).createNotificationChannel(channel);
         }
-        startForeground(1, new Notification.Builder(this, "SC").setContentTitle("Screen Sharing").build());
+        startForeground(1, new Notification.Builder(this, "SC").setContentTitle("Screen Sharing is Active").build());
 
         MediaProjectionManager mpm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
         mp = mpm.getMediaProjection(intent.getIntExtra("RESULT_CODE", -1), intent.getParcelableExtra("DATA"));
@@ -44,7 +44,7 @@ public class ScreenStreamService extends Service {
     private void startServer() {
         int w = 720; int h = 1280;
         ir = ImageReader.newInstance(w, h, PixelFormat.RGBA_8888, 2);
-        vd = mp.createVirtualDisplay("ScreenCapture", w, h, 300, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, ir.getSurface(), null, null);
+        vd = mp.createVirtualDisplay("Capture", w, h, 300, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, ir.getSurface(), null, null);
 
         new Thread(() -> {
             try (ServerSocket server = new ServerSocket(8080)) {
@@ -67,7 +67,8 @@ public class ScreenStreamService extends Service {
                             image.close();
 
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 40, baos);
+                            // JPEG Quality 30 for max speed and zero latency
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 30, baos);
                             byte[] imgData = baos.toByteArray();
 
                             os.write(("--BoundaryString\r\nContent-Type: image/jpeg\r\nContent-Length: " + imgData.length + "\r\n\r\n").getBytes());
@@ -75,7 +76,6 @@ public class ScreenStreamService extends Service {
                             os.write("\r\n".getBytes());
                             os.flush();
                         }
-                        Thread.sleep(50);
                     }
                 }
             } catch (Exception e) {}
