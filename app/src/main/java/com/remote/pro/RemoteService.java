@@ -3,6 +3,7 @@ package com.remote.pro;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.graphics.Path;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.accessibility.AccessibilityEvent;
@@ -48,12 +49,16 @@ public class RemoteService extends AccessibilityService {
 
     private void performClick(float x, float y) {
         DisplayMetrics m = getResources().getDisplayMetrics();
-        float safeX = Math.max(0, Math.min(x, m.widthPixels - 1));
-        float safeY = Math.max(0, Math.min(y, m.heightPixels - 1));
+        // Safe boundaries set kardi taake status bar / corners hit na hon
+        float safeX = Math.max(10, Math.min(x, m.widthPixels - 10));
+        float safeY = Math.max(10, Math.min(y, m.heightPixels - 10));
         
-        Path p = new Path(); p.moveTo(safeX, safeY);
+        Path p = new Path(); 
+        p.moveTo(safeX, safeY);
+        p.lineTo(safeX + 1, safeY + 1); // Tap register karwane k liye tiny stroke
+        
         GestureDescription.Builder b = new GestureDescription.Builder();
-        b.addStroke(new GestureDescription.StrokeDescription(p, 0, 50));
+        b.addStroke(new GestureDescription.StrokeDescription(p, 0, 100)); // 100ms duration
         dispatchGesture(b.build(), null, null);
     }
 
@@ -62,11 +67,10 @@ public class RemoteService extends AccessibilityService {
         float cx = m.widthPixels / 2f, cy = m.heightPixels / 2f;
         Path p = new Path(); 
         
-        // Exact 4-Way Scroll Math (Reverse finger movement for correct scroll)
-        if (dir.equals("UP")) { p.moveTo(cx, cy - 100); p.lineTo(cx, cy + 400); } // Scroll Up = Finger moves Down
-        else if (dir.equals("DOWN")) { p.moveTo(cx, cy + 300); p.lineTo(cx, cy - 300); } // Scroll Down = Finger moves Up
-        else if (dir.equals("LEFT")) { p.moveTo(cx - 200, cy); p.lineTo(cx + 300, cy); } // Scroll Left = Finger moves Right
-        else if (dir.equals("RIGHT")) { p.moveTo(cx + 300, cy); p.lineTo(cx - 300, cy); } // Scroll Right = Finger moves Left
+        if (dir.equals("UP")) { p.moveTo(cx, cy - 100); p.lineTo(cx, cy + 400); } 
+        else if (dir.equals("DOWN")) { p.moveTo(cx, cy + 300); p.lineTo(cx, cy - 300); } 
+        else if (dir.equals("LEFT")) { p.moveTo(cx - 200, cy); p.lineTo(cx + 300, cy); } 
+        else if (dir.equals("RIGHT")) { p.moveTo(cx + 300, cy); p.lineTo(cx - 300, cy); } 
         
         GestureDescription.Builder b = new GestureDescription.Builder();
         b.addStroke(new GestureDescription.StrokeDescription(p, 0, 150));
@@ -78,9 +82,19 @@ public class RemoteService extends AccessibilityService {
         if (root != null) {
             AccessibilityNodeInfo focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
             if (focus != null) {
-                // Sahi Append Logic (Ab pehla word delete nahi hoga)
                 CharSequence current = focus.getText();
-                String text = (current != null ? current.toString() : "");
+                String text = "";
+                
+                // Ye check "Message" wale hint ko ignore kare ga
+                if (current != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        if (!focus.isShowingHintText()) {
+                            text = current.toString();
+                        }
+                    } else {
+                        text = current.toString();
+                    }
+                }
                 
                 if (newChar.equals("BACKSPACE")) {
                     if (text.length() > 0) text = text.substring(0, text.length() - 1);
