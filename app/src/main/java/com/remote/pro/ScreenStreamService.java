@@ -21,6 +21,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
+public class RemoteService extends AccessibilityService {
+    @Override public void onAccessibilityEvent(AccessibilityEvent event) {}
+    @Override public void onInterrupt() {}
 public class ScreenStreamService extends Service {
     private MediaProjection mp;
     private VirtualDisplay vd;
@@ -42,7 +45,7 @@ public class ScreenStreamService extends Service {
     }
 
     private void startServer() {
-        // HD 720p Resolution Set Kar Di Gayi Hai
+        // HD 720p Resolution Set
         int w = 720; 
         int h = 1280;
         ir = ImageReader.newInstance(w, h, PixelFormat.RGBA_8888, 2);
@@ -69,7 +72,7 @@ public class ScreenStreamService extends Service {
                             image.close();
 
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            // JPEG Quality 80 kar di gayi hai for High Definition Display
+                            // High Quality Set
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
                             byte[] imgData = baos.toByteArray();
 
