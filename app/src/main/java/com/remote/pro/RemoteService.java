@@ -6,6 +6,7 @@ import android.graphics.Path;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import java.io.DataInputStream;
@@ -29,7 +30,9 @@ public class RemoteService extends AccessibilityService {
 
                         if (cmd.startsWith("CLICK:")) {
                             String[] p = cmd.split(":");
-                            DisplayMetrics m = getResources().getDisplayMetrics();
+                            // Yahan RealMetrics use ki gayi hain exact touch map karne ke liye
+                            DisplayMetrics m = new DisplayMetrics();
+                            ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(m);
                             performClick(Float.parseFloat(p[1]) * m.widthPixels, Float.parseFloat(p[2]) * m.heightPixels);
                         } else if (cmd.startsWith("SWIPE:")) {
                             String dir = cmd.split(":")[1];
@@ -69,7 +72,8 @@ public class RemoteService extends AccessibilityService {
     }
 
     private void performClick(float x, float y) {
-        DisplayMetrics m = getResources().getDisplayMetrics();
+        DisplayMetrics m = new DisplayMetrics();
+        ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(m);
         float safeX = Math.max(10, Math.min(x, m.widthPixels - 10));
         float safeY = Math.max(10, Math.min(y, m.heightPixels - 10));
         
@@ -83,12 +87,14 @@ public class RemoteService extends AccessibilityService {
     }
 
     private void performSwipe(String dir) {
-        DisplayMetrics m = getResources().getDisplayMetrics();
+        DisplayMetrics m = new DisplayMetrics();
+        ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(m);
         float cx = m.widthPixels / 2f;
         float cy = m.heightPixels / 2f;
         Path p = new Path(); 
         
-        int distance = 250; 
+        // Distance 400 kar diya taake properly scroll/fling ho
+        int distance = 400; 
         
         if (dir.equals("UP")) { p.moveTo(cx, cy); p.lineTo(cx, cy + distance); } 
         else if (dir.equals("DOWN")) { p.moveTo(cx, cy); p.lineTo(cx, cy - distance); } 
@@ -118,17 +124,33 @@ public class RemoteService extends AccessibilityService {
                     }
                 }
                 
+                // Cursor ki location pata karo
+                int start = focus.getTextSelectionStart();
+                if (start < 0 || start > text.length()) start = text.length();
+                
                 if (newChar.equals("BACKSPACE")) {
-                    if (text.length() > 0) text = text.substring(0, text.length() - 1);
+                    if (start > 0) {
+                        // Sirf cursor se pehle wala character remove karo
+                        text = text.substring(0, start - 1) + text.substring(start);
+                        start--; // Cursor ko aik step peche lao
+                    }
                 } else if (newChar.equals("SPACE")) {
-                    text = text + " ";
+                    text = text.substring(0, start) + " " + text.substring(start);
+                    start++;
                 } else {
-                    text = text + newChar;
+                    text = text.substring(0, start) + newChar + text.substring(start);
+                    start += newChar.length();
                 }
 
                 Bundle a = new Bundle(); 
                 a.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
                 focus.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, a);
+                
+                // Type karne ke baad cursor ko wapis sahi jagah set karo
+                Bundle selectionArgs = new Bundle();
+                selectionArgs.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, start);
+                selectionArgs.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, start);
+                focus.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selectionArgs);
             }
         }
     }
