@@ -21,9 +21,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
-public class RemoteService extends AccessibilityService {
-    @Override public void onAccessibilityEvent(AccessibilityEvent event) {}
-    @Override public void onInterrupt() {}
 public class ScreenStreamService extends Service {
     private MediaProjection mp;
     private VirtualDisplay vd;
