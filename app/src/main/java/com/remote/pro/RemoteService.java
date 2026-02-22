@@ -32,7 +32,28 @@ public class RemoteService extends AccessibilityService {
                             DisplayMetrics m = getResources().getDisplayMetrics();
                             performClick(Float.parseFloat(p[1]) * m.widthPixels, Float.parseFloat(p[2]) * m.heightPixels);
                         } else if (cmd.startsWith("SWIPE:")) {
-                            performSwipe(cmd.split(":")[1]);
+                            String dir = cmd.split(":")[1];
+                            boolean handledAsCursor = false;
+                            
+                            AccessibilityNodeInfo root = getRootInActiveWindow();
+                            if (root != null) {
+                                AccessibilityNodeInfo focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
+                                if (focus != null) {
+                                    Bundle args = new Bundle();
+                                    args.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT, AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER);
+                                    if (dir.equals("LEFT")) {
+                                        focus.performAction(AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY, args);
+                                        handledAsCursor = true;
+                                    } else if (dir.equals("RIGHT")) {
+                                        focus.performAction(AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY, args);
+                                        handledAsCursor = true;
+                                    }
+                                }
+                            }
+                            
+                            if (!handledAsCursor) {
+                                performSwipe(dir);
+                            }
                         } else if (cmd.startsWith("CMD:")) {
                             String c = cmd.split(":")[1];
                             if (c.equals("BACK")) performGlobalAction(GLOBAL_ACTION_BACK);
@@ -49,28 +70,30 @@ public class RemoteService extends AccessibilityService {
 
     private void performClick(float x, float y) {
         DisplayMetrics m = getResources().getDisplayMetrics();
-        // Safe boundaries set kardi taake status bar / corners hit na hon
         float safeX = Math.max(10, Math.min(x, m.widthPixels - 10));
         float safeY = Math.max(10, Math.min(y, m.heightPixels - 10));
         
         Path p = new Path(); 
         p.moveTo(safeX, safeY);
-        p.lineTo(safeX + 1, safeY + 1); // Tap register karwane k liye tiny stroke
+        p.lineTo(safeX + 1, safeY + 1); 
         
         GestureDescription.Builder b = new GestureDescription.Builder();
-        b.addStroke(new GestureDescription.StrokeDescription(p, 0, 100)); // 100ms duration
+        b.addStroke(new GestureDescription.StrokeDescription(p, 0, 100)); 
         dispatchGesture(b.build(), null, null);
     }
 
     private void performSwipe(String dir) {
         DisplayMetrics m = getResources().getDisplayMetrics();
-        float cx = m.widthPixels / 2f, cy = m.heightPixels / 2f;
+        float cx = m.widthPixels / 2f;
+        float cy = m.heightPixels / 2f;
         Path p = new Path(); 
         
-        if (dir.equals("UP")) { p.moveTo(cx, cy - 100); p.lineTo(cx, cy + 400); } 
-        else if (dir.equals("DOWN")) { p.moveTo(cx, cy + 300); p.lineTo(cx, cy - 300); } 
-        else if (dir.equals("LEFT")) { p.moveTo(cx - 200, cy); p.lineTo(cx + 300, cy); } 
-        else if (dir.equals("RIGHT")) { p.moveTo(cx + 300, cy); p.lineTo(cx - 300, cy); } 
+        int distance = 250; 
+        
+        if (dir.equals("UP")) { p.moveTo(cx, cy); p.lineTo(cx, cy + distance); } 
+        else if (dir.equals("DOWN")) { p.moveTo(cx, cy); p.lineTo(cx, cy - distance); } 
+        else if (dir.equals("LEFT")) { p.moveTo(cx, cy); p.lineTo(cx + distance, cy); } 
+        else if (dir.equals("RIGHT")) { p.moveTo(cx, cy); p.lineTo(cx - distance, cy); } 
         
         GestureDescription.Builder b = new GestureDescription.Builder();
         b.addStroke(new GestureDescription.StrokeDescription(p, 0, 150));
@@ -85,7 +108,6 @@ public class RemoteService extends AccessibilityService {
                 CharSequence current = focus.getText();
                 String text = "";
                 
-                // Ye check "Message" wale hint ko ignore kare ga
                 if (current != null) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         if (!focus.isShowingHintText()) {
