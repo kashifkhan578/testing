@@ -42,9 +42,9 @@ public class ScreenStreamService extends Service {
     }
 
     private void startServer() {
-        // 480p Resolution Set Kar Di Gayi Hai
-        int w = 480; 
-        int h = 854;
+        // HD 720p Resolution Set Kar Di Gayi Hai
+        int w = 720; 
+        int h = 1280;
         ir = ImageReader.newInstance(w, h, PixelFormat.RGBA_8888, 2);
         vd = mp.createVirtualDisplay("Capture", w, h, 300, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, ir.getSurface(), null, null);
 
@@ -69,8 +69,8 @@ public class ScreenStreamService extends Service {
                             image.close();
 
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            // JPEG Quality 30 for max speed
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 30, baos);
+                            // JPEG Quality 80 kar di gayi hai for High Definition Display
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
                             byte[] imgData = baos.toByteArray();
 
                             os.write(("--BoundaryString\r\nContent-Type: image/jpeg\r\nContent-Length: " + imgData.length + "\r\n\r\n").getBytes());
